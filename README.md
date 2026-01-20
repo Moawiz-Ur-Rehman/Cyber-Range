@@ -10,8 +10,7 @@
 ---
 
 ## 🎮 Live Demo
-**[Click here to Launch the Cyber Range 🚀](https://cyber-range.vercel.app)** *(Note: Replace the link above with your actual Vercel link once deployed)*
-
+https://cyber-range-orcin.vercel.app/
 ---
 
 ## ⚡ Interactive Features

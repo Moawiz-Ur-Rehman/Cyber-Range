@@ -256,22 +256,55 @@ function App() {
     );
   }
 
-  // --- VIEW 2: BOOTING ---
-  if (currentView === 'BOOTING') {
-    return (
-      <div className="h-screen w-screen bg-black text-green-500 font-mono flex flex-col items-center justify-center relative p-20">
-        <div className="z-10 text-center space-y-6 max-w-4xl">
-            <div className="text-xl text-slate-500 uppercase tracking-[0.3em] animate-pulse">Initializing Environment</div>
-            <h1 className="text-5xl font-bold text-white border-b-2 border-green-500 pb-4 inline-block">{activeScenario.title}</h1>
-            <div className="bg-slate-900/80 border border-slate-700 p-6 rounded-lg text-left mt-8">
-                <h3 className="text-green-400 font-bold mb-2 uppercase text-sm">Mission Briefing:</h3>
-                <p className="text-xl text-slate-300 leading-relaxed">{activeScenario.description}</p>
-            </div>
-        </div>
-        <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-800"><div className="h-full bg-green-500 animate-[width_4.5s_ease-in-out_forwards]" style={{width: '0%'}}></div></div>
+ // --- VIEW 2: BOOTING (Updated with "Call to Action") ---
+ if (currentView === 'BOOTING') {
+  return (
+    <div className="h-screen w-screen bg-black text-green-500 font-mono flex flex-col items-center justify-center relative p-20">
+      <div className="z-10 text-center space-y-6 max-w-4xl">
+          {/* Blinking Status */}
+          <div className="text-xl text-red-500 uppercase tracking-[0.3em] animate-pulse font-bold">⚠️ Incoming Incident Report ⚠️</div>
+          
+          {/* Scenario Title */}
+          <h1 className="text-5xl font-bold text-white border-b-2 border-red-600 pb-4 inline-block">
+              {activeScenario.title}
+          </h1>
+          
+          {/* The Scenario & The Question */}
+          <div className="bg-slate-900/90 border border-slate-600 p-8 rounded-lg text-left mt-8 shadow-2xl relative overflow-hidden">
+              {/* Visual decorative line */}
+              <div className="absolute top-0 left-0 w-2 h-full bg-red-600"></div>
+
+              <h3 className="text-slate-400 font-bold mb-2 uppercase text-xs tracking-wider">SITUATION REPORT:</h3>
+              <p className="text-2xl text-white leading-relaxed mb-8 font-light">
+                  "{activeScenario.description}"
+              </p>
+
+              <div className="bg-black/50 p-4 rounded border border-yellow-600/50 flex items-start gap-3">
+                  <Activity className="text-yellow-500 shrink-0 mt-1" size={24} />
+                  <div>
+                      <h4 className="text-yellow-500 font-bold uppercase text-sm tracking-wider mb-1">Your Objective:</h4>
+                      <p className="text-lg text-slate-200 font-bold">
+                          Based on the evidence, identify the threat and execute the appropriate defensive protocol. What is the correct response step?
+                      </p>
+                  </div>
+              </div>
+          </div>
+
+          {/* Loading Steps */}
+          <div className="text-sm text-slate-500 pt-6 font-mono space-y-1">
+              <p>{'>'} Decrypting intelligence report...</p>
+              <p>{'>'} Establishing secure link to SOC Dashboard...</p>
+              <p>{'>'} Loading containment protocols...</p>
+          </div>
       </div>
-    );
-  }
+
+      {/* Progress Bar */}
+      <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-900">
+          <div className="h-full bg-red-600 animate-[width_5.5s_ease-in-out_forwards]" style={{width: '0%'}}></div>
+      </div>
+    </div>
+  );
+}
 
   // --- VIEW 3: DESKTOP ---
   return (
