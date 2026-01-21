@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TerminalSquare, FileText, ShieldAlert, Activity, Lock, Play, Database, UserX, MonitorPlay, WifiOff, Globe, Ban, KeyRound, CheckCircle, XCircle } from 'lucide-react';
+import { TerminalSquare, FileText, ShieldAlert, Activity, Lock, Play, Database, UserX, MonitorPlay, WifiOff, Globe, Ban, KeyRound, CheckCircle, XCircle, Laptop, Smartphone } from 'lucide-react';
 
 // --- 1. MENU DEFINITIONS ---
 const LAB_TYPES = [
@@ -9,147 +9,27 @@ const LAB_TYPES = [
   { id: 'insider', title: 'Insider Threat Lab', icon: <UserX className="text-purple-500" size={32} />, difficulty: 'Hard', description: 'Data exfiltration detected. Find the rogue employee stealing secrets.' },
 ];
 
-// --- 2. SCENARIO DATABASE (3 VARIANTS PER LAB) ---
+// --- 2. SCENARIO DATABASE ---
 const SCENARIO_DB = {
   ransomware: [
-    {
-      // Variant 1: Worm Spreading (Needs Isolation)
-      title: 'Variant: WannaCry Legacy',
-      description: 'Users report a red screen. SMB ports are open. The malware is spreading rapidly via the network.',
-      mission: 'Identify the propagation method and isolate the infected host.',
-      files: { 'READ_ME.txt': 'Send $300 to wallet 123xyz.', 'sys_logs.log': '[10:00] SMB v1 Connection Accepted from 192.168.1.55 (Spreading)' },
-      scannerOutput: "Scanning... [!] Port 445 (SMB): OPEN. Host 192.168.1.55 is propagating malware.",
-      correctAction: 'ISOLATE_HOST', 
-      successMsg: "SUCCESS: Host 192.168.1.55 isolated. The spread of WannaCry has been stopped.",
-      failMsg: "FAILURE: Blocking the IP didn't help; the worm is spreading via internal SMB."
-    },
-    {
-      // Variant 2: Fake Resume (Needs Isolation)
-      title: 'Variant: LockBit 3.0',
-      description: 'HR Server encrypted. Malware entered via a fake resume PDF. No network spread detected yet.',
-      mission: 'Isolate the infected machine before data exfiltration occurs.',
-      files: { 'Restore_Files.txt': 'LOCKBIT 3.0.', 'process_list.txt': 'PID 999: Resume.pdf.exe' },
-      scannerOutput: "Scanning... [!] Suspicious Outbound Traffic to TOR Node.",
-      correctAction: 'ISOLATE_HOST',
-      successMsg: "SUCCESS: HR Server isolated. Data exfiltration to the dark web cut off.",
-      failMsg: "FAILURE: Resetting passwords didn't stop the encryption process."
-    },
-    {
-      // Variant 3: C2 Beaconing (Needs Domain Block)
-      title: 'Variant: BlackCat C2',
-      description: 'Files are encrypted, but the malware is "calling home" to receive encryption keys. Cut the connection.',
-      mission: 'Stop the malware from communicating with the Command & Control server.',
-      files: { 'network_dump.pcap': 'DNS Query: api.evil-hacker.com (NXDOMAIN)', 'sys_logs.log': '[14:00] Encryptor waiting for server key...' },
-      scannerOutput: "Scanning... [!] High traffic to domain 'api.evil-hacker.com'. Malware is beaconing.",
-      correctAction: 'BLOCK_DOMAIN',
-      successMsg: "SUCCESS: Domain 'api.evil-hacker.com' blocked. Encryption process halted due to missing key.",
-      failMsg: "FAILURE: Isolating the host was too slow; the key was already downloaded."
-    }
+    { title: 'Variant: WannaCry Legacy', description: 'Users report a red screen. SMB ports are open. The malware is spreading rapidly via the network.', mission: 'Identify the propagation method and isolate the infected host.', files: { 'READ_ME.txt': 'Send $300 to wallet 123xyz.', 'sys_logs.log': '[10:00] SMB v1 Connection Accepted from 192.168.1.55 (Spreading)' }, scannerOutput: "Scanning... [!] Port 445 (SMB): OPEN. Host 192.168.1.55 is propagating malware.", correctAction: 'ISOLATE_HOST', successMsg: "SUCCESS: Host 192.168.1.55 isolated. The spread of WannaCry has been stopped.", failMsg: "FAILURE: Blocking the IP didn't help; the worm is spreading via internal SMB." },
+    { title: 'Variant: LockBit 3.0', description: 'HR Server encrypted. Malware entered via a fake resume PDF. No network spread detected yet.', mission: 'Isolate the infected machine before data exfiltration occurs.', files: { 'Restore_Files.txt': 'LOCKBIT 3.0.', 'process_list.txt': 'PID 999: Resume.pdf.exe' }, scannerOutput: "Scanning... [!] Suspicious Outbound Traffic to TOR Node.", correctAction: 'ISOLATE_HOST', successMsg: "SUCCESS: HR Server isolated. Data exfiltration to the dark web cut off.", failMsg: "FAILURE: Resetting passwords didn't stop the encryption process." },
+    { title: 'Variant: BlackCat C2', description: 'Files are encrypted, but the malware is "calling home" to receive encryption keys. Cut the connection.', mission: 'Stop the malware from communicating with the Command & Control server.', files: { 'network_dump.pcap': 'DNS Query: api.evil-hacker.com (NXDOMAIN)', 'sys_logs.log': '[14:00] Encryptor waiting for server key...' }, scannerOutput: "Scanning... [!] High traffic to domain 'api.evil-hacker.com'. Malware is beaconing.", correctAction: 'BLOCK_DOMAIN', successMsg: "SUCCESS: Domain 'api.evil-hacker.com' blocked. Encryption process halted due to missing key.", failMsg: "FAILURE: Isolating the host was too slow; the key was already downloaded." }
   ],
   phishing: [
-    {
-      // Variant 1: Mass Creds (Needs Password Reset)
-      title: 'Variant: Mass Credential Harvest',
-      description: 'ALERT: 47 Employees clicked a link in a "Payroll Update" email. Defenders must act fast.',
-      mission: 'Prevent the attacker from using the stolen credentials.',
-      files: { 'email_dump.eml': 'Subject: Payroll Update\nLink: http://payro11-update.com/login' },
-      scannerOutput: "Scanning... [!] 47 outbound connections to payro11-update.com established.",
-      correctAction: 'RESET_CREDS', 
-      successMsg: "SUCCESS: All 47 compromised accounts have forced password resets. Attacker locked out.",
-      failMsg: "FAILURE: Blocking the domain is too late; they already have the passwords!"
-    },
-    {
-      // Variant 2: Malware Download (Needs Domain Block)
-      title: 'Variant: Drive-By Download',
-      description: 'An email prompted users to download a "Security Update". It contains a Trojan.',
-      mission: 'Stop the download source.',
-      files: { 'security_alert.eml': 'Link: http://microsft-verify.net/patch.exe' },
-      scannerOutput: "Scanning... [!] Domain 'microsft-verify.net' hosting malicious executable.",
-      correctAction: 'BLOCK_DOMAIN',
-      successMsg: "SUCCESS: Domain microsft-verify.net blocked. No further downloads possible.",
-      failMsg: "FAILURE: Isolating one host didn't stop others from downloading the file."
-    },
-    {
-      // Variant 3: Infected Attachment (Needs Isolation)
-      title: 'Variant: The "Invoice" Macro',
-      description: 'Finance dept opened "Invoice_2024.doc". A malicious macro script is now running on Workstation-04.',
-      mission: 'Contain the infected Finance Workstation.',
-      files: { 'file_system.log': '[11:05] Invoice_2024.doc spawned cmd.exe (Macro Attack)' },
-      scannerOutput: "Scanning... [!] Workstation-04 executing unauthorized PowerShell scripts.",
-      correctAction: 'ISOLATE_HOST',
-      successMsg: "SUCCESS: Workstation-04 isolated. The macro script cannot reach the rest of the network.",
-      failMsg: "FAILURE: Blocking the IP didn't stop the script running locally on the machine."
-    }
+    { title: 'Variant: Mass Credential Harvest', description: 'ALERT: 47 Employees clicked a link in a "Payroll Update" email. Defenders must act fast.', mission: 'Prevent the attacker from using the stolen credentials.', files: { 'email_dump.eml': 'Subject: Payroll Update\nLink: http://payro11-update.com/login' }, scannerOutput: "Scanning... [!] 47 outbound connections to payro11-update.com established.", correctAction: 'RESET_CREDS', successMsg: "SUCCESS: All 47 compromised accounts have forced password resets. Attacker locked out.", failMsg: "FAILURE: Blocking the domain is too late; they already have the passwords!" },
+    { title: 'Variant: Drive-By Download', description: 'An email prompted users to download a "Security Update". It contains a Trojan.', mission: 'Stop the download source.', files: { 'security_alert.eml': 'Link: http://microsft-verify.net/patch.exe' }, scannerOutput: "Scanning... [!] Domain 'microsft-verify.net' hosting malicious executable.", correctAction: 'BLOCK_DOMAIN', successMsg: "SUCCESS: Domain microsft-verify.net blocked. No further downloads possible.", failMsg: "FAILURE: Isolating one host didn't stop others from downloading the file." },
+    { title: 'Variant: The "Invoice" Macro', description: 'Finance dept opened "Invoice_2024.doc". A malicious macro script is now running on Workstation-04.', mission: 'Contain the infected Finance Workstation.', files: { 'file_system.log': '[11:05] Invoice_2024.doc spawned cmd.exe (Macro Attack)' }, scannerOutput: "Scanning... [!] Workstation-04 executing unauthorized PowerShell scripts.", correctAction: 'ISOLATE_HOST', successMsg: "SUCCESS: Workstation-04 isolated. The macro script cannot reach the rest of the network.", failMsg: "FAILURE: Blocking the IP didn't stop the script running locally on the machine." }
   ],
   sqlinjection: [
-    {
-      // Variant 1: Login Bypass (Needs IP Block)
-      title: 'Variant: Login Bypass',
-      description: 'Attacker is using SQL Injection to bypass the admin login screen.',
-      mission: 'Stop the active attack vector.',
-      files: { 'access.log': 'POST /login user="admin" pass="\' OR 1=1; --"' },
-      scannerOutput: "Scanning... [!] SQL Injection pattern detected from IP 45.33.22.11.",
-      correctAction: 'BLOCK_IP',
-      successMsg: "SUCCESS: IP 45.33.22.11 blocked. Admin panel is secure.",
-      failMsg: "FAILURE: Taking the database offline caused a business outage."
-    },
-    {
-      // Variant 2: Data Exfil (Needs IP Block)
-      title: 'Variant: UNION-Based Exfiltration',
-      description: 'Customer credit card data is leaking. Logs show a UNION SELECT attack.',
-      mission: 'Block the attacker stealing data.',
-      files: { 'db_query.log': 'SELECT cc_num FROM payments UNION SELECT 1,2,3 --' },
-      scannerOutput: "Scanning... [!] Massive data egress to IP 198.51.100.22 via SQL query.",
-      correctAction: 'BLOCK_IP',
-      successMsg: "SUCCESS: Attacker IP 198.51.100.22 blocked. Data leak stopped.",
-      failMsg: "FAILURE: Resetting passwords doesn't stop an active SQL connection."
-    },
-    {
-      // Variant 3: Destructive Attack (Needs IP Block)
-      title: 'Variant: DROP TABLE Attack',
-      description: 'An attacker is attempting to delete the entire users database using SQL injection.',
-      mission: 'Prevent the database destruction immediately.',
-      files: { 'error_log.txt': 'Syntax Error: "; DROP TABLE users; --" near line 1' },
-      scannerOutput: "Scanning... [!] High-Risk Destructive SQL commands from IP 103.21.44.11.",
-      correctAction: 'BLOCK_IP',
-      successMsg: "SUCCESS: IP 103.21.44.11 blocked just in time. The database integrity is saved.",
-      failMsg: "FAILURE: Revoking access failed because the attacker is external."
-    }
+    { title: 'Variant: Login Bypass', description: 'Attacker is using SQL Injection to bypass the admin login screen.', mission: 'Stop the active attack vector.', files: { 'access.log': 'POST /login user="admin" pass="\' OR 1=1; --"' }, scannerOutput: "Scanning... [!] SQL Injection pattern detected from IP 45.33.22.11.", correctAction: 'BLOCK_IP', successMsg: "SUCCESS: IP 45.33.22.11 blocked. Admin panel is secure.", failMsg: "FAILURE: Taking the database offline caused a business outage." },
+    { title: 'Variant: UNION-Based Exfiltration', description: 'Customer credit card data is leaking. Logs show a UNION SELECT attack.', mission: 'Block the attacker stealing data.', files: { 'db_query.log': 'SELECT cc_num FROM payments UNION SELECT 1,2,3 --' }, scannerOutput: "Scanning... [!] Massive data egress to IP 198.51.100.22 via SQL query.", correctAction: 'BLOCK_IP', successMsg: "SUCCESS: Attacker IP 198.51.100.22 blocked. Data leak stopped.", failMsg: "FAILURE: Resetting passwords doesn't stop an active SQL connection." },
+    { title: 'Variant: Destructive Attack', description: 'An attacker is attempting to delete the entire users database using SQL injection.', mission: 'Prevent the database destruction immediately.', files: { 'error_log.txt': 'Syntax Error: "; DROP TABLE users; --" near line 1' }, scannerOutput: "Scanning... [!] High-Risk Destructive SQL commands from IP 103.21.44.11.", correctAction: 'BLOCK_IP', successMsg: "SUCCESS: IP 103.21.44.11 blocked just in time. The database integrity is saved.", failMsg: "FAILURE: Revoking access failed because the attacker is external." }
   ],
   insider: [
-    {
-      // Variant 1: USB Theft (Needs Revoke)
-      title: 'Variant: The Night Shift',
-      description: 'User "J.Smith" copied confidential blueprints to a USB drive at 3 AM.',
-      mission: 'Neutralize the insider threat immediately.',
-      files: { 'usb_logs.txt': '[03:15 AM] User "J.Smith" copied "Project_X.pdf"' },
-      scannerOutput: "Scanning... [!] User J.Smith currently active.",
-      correctAction: 'REVOKE_ACCESS',
-      successMsg: "SUCCESS: User J.Smith's account disabled. Security escorting him out.",
-      failMsg: "FAILURE: Blocking the IP doesn't help; he is physically at the computer."
-    },
-    {
-      // Variant 2: Cloud Upload (Needs Revoke)
-      title: 'Variant: Cloud Leak',
-      description: 'User "M.Jones" is uploading 50GB of company data to a personal Google Drive.',
-      mission: 'Stop the employee from exfiltrating data.',
-      files: { 'dlp_logs.txt': '[14:00] Uploading "Client_List.xlsx" to drive.google.com' },
-      scannerOutput: "Scanning... [!] User M.Jones utilizing 90% of upload bandwidth.",
-      correctAction: 'REVOKE_ACCESS',
-      successMsg: "SUCCESS: Account M.Jones suspended. Upload session terminated.",
-      failMsg: "FAILURE: Blocking the domain 'google.com' would stop the whole company from working."
-    },
-    {
-      // Variant 3: Logic Bomb (Needs Revoke)
-      title: 'Variant: The Logic Bomb',
-      description: 'A disgruntled admin "SysAdmin_Bob" wrote a script to delete all servers if he is fired.',
-      mission: 'Detect and neutralize the malicious admin account.',
-      files: { 'script_audit.log': 'User SysAdmin_Bob created "doom_switch.sh"' },
-      scannerOutput: "Scanning... [!] User SysAdmin_Bob scheduled a suspicious cron job for 5:00 PM.",
-      correctAction: 'REVOKE_ACCESS',
-      successMsg: "SUCCESS: SysAdmin_Bob's privileges revoked. The cron job has been cancelled.",
-      failMsg: "FAILURE: Isolating the host doesn't stop the cron job if the user is still active."
-    }
+    { title: 'Variant: The Night Shift', description: 'User "J.Smith" copied confidential blueprints to a USB drive at 3 AM.', mission: 'Neutralize the insider threat immediately.', files: { 'usb_logs.txt': '[03:15 AM] User "J.Smith" copied "Project_X.pdf"' }, scannerOutput: "Scanning... [!] User J.Smith currently active.", correctAction: 'REVOKE_ACCESS', successMsg: "SUCCESS: User J.Smith's account disabled. Security escorting him out.", failMsg: "FAILURE: Blocking the IP doesn't help; he is physically at the computer." },
+    { title: 'Variant: Cloud Leak', description: 'User "M.Jones" is uploading 50GB of company data to a personal Google Drive.', mission: 'Stop the employee from exfiltrating data.', files: { 'dlp_logs.txt': '[14:00] Uploading "Client_List.xlsx" to drive.google.com' }, scannerOutput: "Scanning... [!] User M.Jones utilizing 90% of upload bandwidth.", correctAction: 'REVOKE_ACCESS', successMsg: "SUCCESS: Account M.Jones suspended. Upload session terminated.", failMsg: "FAILURE: Blocking the domain 'google.com' would stop the whole company from working." },
+    { title: 'Variant: The Logic Bomb', description: 'A disgruntled admin "SysAdmin_Bob" wrote a script to delete all servers if he is fired.', mission: 'Detect and neutralize the malicious admin account.', files: { 'script_audit.log': 'User SysAdmin_Bob created "doom_switch.sh"' }, scannerOutput: "Scanning... [!] User SysAdmin_Bob scheduled a suspicious cron job for 5:00 PM.", correctAction: 'REVOKE_ACCESS', successMsg: "SUCCESS: SysAdmin_Bob's privileges revoked. The cron job has been cancelled.", failMsg: "FAILURE: Isolating the host doesn't stop the cron job if the user is still active." }
   ]
 };
 
@@ -166,6 +46,10 @@ function App() {
   const [currentView, setCurrentView] = useState('MENU');
   const [activeScenario, setActiveScenario] = useState(null);
   
+  // New Startups States
+  const [showSplash, setShowSplash] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
   // Game States
   const [showTerminal, setShowTerminal] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -178,6 +62,27 @@ function App() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [history]);
+
+  // --- INITIAL CHECK: Splash & Mobile Detect ---
+  useEffect(() => {
+    // 1. Check Mobile
+    const checkMobile = () => {
+        if (window.innerWidth < 1024) setIsMobile(true);
+        else setIsMobile(false);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    // 2. Splash Timer (3.5 Seconds cinematic intro)
+    const splashTimer = setTimeout(() => {
+        setShowSplash(false);
+    }, 3500);
+
+    return () => {
+        window.removeEventListener('resize', checkMobile);
+        clearTimeout(splashTimer);
+    }
+  }, []);
 
   const pickRandomScenario = (typeId) => {
     const variations = SCENARIO_DB[typeId];
@@ -201,17 +106,9 @@ function App() {
 
   const handleResponseAction = (actionId) => {
     if (actionId === activeScenario.correctAction) {
-      setResolution({
-        status: 'SUCCESS',
-        title: 'THREAT NEUTRALIZED',
-        message: activeScenario.successMsg
-      });
+      setResolution({ status: 'SUCCESS', title: 'THREAT NEUTRALIZED', message: activeScenario.successMsg });
     } else {
-      setResolution({
-        status: 'FAILURE',
-        title: 'INCIDENT FAILED',
-        message: activeScenario.failMsg || "Incorrect response. The threat persists."
-      });
+      setResolution({ status: 'FAILURE', title: 'INCIDENT FAILED', message: activeScenario.failMsg || "Incorrect response. The threat persists." });
     }
   };
 
@@ -237,6 +134,41 @@ function App() {
   const getDifficultyColor = (diff) => diff === 'Hard' ? 'text-red-500' : diff === 'Medium' ? 'text-orange-500' : 'text-green-500';
   const getBorderColor = (diff) => diff === 'Hard' ? 'hover:border-red-500' : diff === 'Medium' ? 'hover:border-orange-500' : 'hover:border-green-500';
 
+
+  // --- VIEW 0: MOBILE BLOCKER ---
+  if (isMobile) {
+      return (
+          <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-8 text-center font-mono">
+              <Smartphone className="text-red-500 mb-6" size={64} />
+              <h1 className="text-2xl font-bold text-white mb-4">Desktop Environment Required</h1>
+              <p className="text-slate-400 max-w-md">
+                  The Cyber Range Simulator requires a physical keyboard and terminal interface. 
+                  Please access this simulation on a <span className="text-green-500 font-bold">Laptop or PC</span>.
+              </p>
+              <div className="mt-8 flex gap-4 opacity-50">
+                  <Laptop className="text-green-500" />
+                  <span className="text-white">Supported</span>
+              </div>
+          </div>
+      );
+  }
+
+  // --- VIEW 0.5: SPLASH SCREEN (NETFLIX STYLE) ---
+  if (showSplash) {
+      return (
+          <div className="h-screen w-screen bg-black flex items-center justify-center overflow-hidden relative">
+              <div className="text-center z-10 animate-[ping_3s_ease-out_reverse]">
+                  <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-800 scale-150 animate-[pulse_3s_ease-in-out]">
+                      CYBER<br/>RANGE
+                  </h1>
+              </div>
+              <div className="absolute bottom-10 text-slate-500 text-xs tracking-[0.5em] animate-pulse">
+                  ESTABLISHING SECURE CONNECTION...
+              </div>
+          </div>
+      );
+  }
+
   // --- VIEW 1: MENU ---
   if (currentView === 'MENU') {
     return (
@@ -256,55 +188,41 @@ function App() {
     );
   }
 
- // --- VIEW 2: BOOTING (Updated with "Call to Action") ---
- if (currentView === 'BOOTING') {
-  return (
-    <div className="h-screen w-screen bg-black text-green-500 font-mono flex flex-col items-center justify-center relative p-20">
-      <div className="z-10 text-center space-y-6 max-w-4xl">
-          {/* Blinking Status */}
-          <div className="text-xl text-red-500 uppercase tracking-[0.3em] animate-pulse font-bold">⚠️ Incoming Incident Report ⚠️</div>
-          
-          {/* Scenario Title */}
-          <h1 className="text-5xl font-bold text-white border-b-2 border-red-600 pb-4 inline-block">
-              {activeScenario.title}
-          </h1>
-          
-          {/* The Scenario & The Question */}
-          <div className="bg-slate-900/90 border border-slate-600 p-8 rounded-lg text-left mt-8 shadow-2xl relative overflow-hidden">
-              {/* Visual decorative line */}
-              <div className="absolute top-0 left-0 w-2 h-full bg-red-600"></div>
+  // --- VIEW 2: BOOTING (Updated with "Call to Action") ---
+  if (currentView === 'BOOTING') {
+    return (
+      <div className="h-screen w-screen bg-black text-green-500 font-mono flex flex-col items-center justify-center relative p-20">
+        <div className="z-10 text-center space-y-6 max-w-4xl">
+            {/* Blinking Status */}
+            <div className="text-xl text-red-500 uppercase tracking-[0.3em] animate-pulse font-bold">⚠️ Incoming Incident Report ⚠️</div>
+            
+            {/* Scenario Title */}
+            <h1 className="text-5xl font-bold text-white border-b-2 border-red-600 pb-4 inline-block">{activeScenario.title}</h1>
+            
+            {/* The Scenario & The Question */}
+            <div className="bg-slate-900/90 border border-slate-600 p-8 rounded-lg text-left mt-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-2 h-full bg-red-600"></div>
+                <h3 className="text-slate-400 font-bold mb-2 uppercase text-xs tracking-wider">SITUATION REPORT:</h3>
+                <p className="text-2xl text-white leading-relaxed mb-8 font-light">"{activeScenario.description}"</p>
+                <div className="bg-black/50 p-4 rounded border border-yellow-600/50 flex items-start gap-3">
+                    <Activity className="text-yellow-500 shrink-0 mt-1" size={24} />
+                    <div>
+                        <h4 className="text-yellow-500 font-bold uppercase text-sm tracking-wider mb-1">Your Objective:</h4>
+                        <p className="text-lg text-slate-200 font-bold">Based on the evidence, identify the threat and execute the appropriate defensive protocol. What is the correct response step?</p>
+                    </div>
+                </div>
+            </div>
 
-              <h3 className="text-slate-400 font-bold mb-2 uppercase text-xs tracking-wider">SITUATION REPORT:</h3>
-              <p className="text-2xl text-white leading-relaxed mb-8 font-light">
-                  "{activeScenario.description}"
-              </p>
-
-              <div className="bg-black/50 p-4 rounded border border-yellow-600/50 flex items-start gap-3">
-                  <Activity className="text-yellow-500 shrink-0 mt-1" size={24} />
-                  <div>
-                      <h4 className="text-yellow-500 font-bold uppercase text-sm tracking-wider mb-1">Your Objective:</h4>
-                      <p className="text-lg text-slate-200 font-bold">
-                          Based on the evidence, identify the threat and execute the appropriate defensive protocol. What is the correct response step?
-                      </p>
-                  </div>
-              </div>
-          </div>
-
-          {/* Loading Steps */}
-          <div className="text-sm text-slate-500 pt-6 font-mono space-y-1">
-              <p>{'>'} Decrypting intelligence report...</p>
-              <p>{'>'} Establishing secure link to SOC Dashboard...</p>
-              <p>{'>'} Loading containment protocols...</p>
-          </div>
+            <div className="text-sm text-slate-500 pt-6 font-mono space-y-1">
+                <p>{'>'} Decrypting intelligence report...</p>
+                <p>{'>'} Establishing secure link to SOC Dashboard...</p>
+                <p>{'>'} Loading containment protocols...</p>
+            </div>
+        </div>
+        <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-900"><div className="h-full bg-red-600 animate-[width_5.5s_ease-in-out_forwards]" style={{width: '0%'}}></div></div>
       </div>
-
-      {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 w-full h-2 bg-gray-900">
-          <div className="h-full bg-red-600 animate-[width_5.5s_ease-in-out_forwards]" style={{width: '0%'}}></div>
-      </div>
-    </div>
-  );
-}
+    );
+  }
 
   // --- VIEW 3: DESKTOP ---
   return (
